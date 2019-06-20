@@ -1,3 +1,12 @@
+terraform {
+  required_version = ">=0.10.7"
+}
+
+provider "aws" {
+  version = "~> 2.0"
+  region  = "us-east-1"
+}
+
 data "aws_region" "current" {}
 
 # cloudwatch
@@ -5,7 +14,7 @@ resource "aws_cloudwatch_event_rule" "container_stopped" {
   name        = "ecs-container-stopped"
   description = "Alerts if an ECS Container unexpectedly exits."
 
-  schedule_expression = <<PATTERN
+  event_pattern = <<PATTERN
 {
   "source": ["aws.ecs"],
   "detail-type": ["ECS Task State Change"],
@@ -18,63 +27,86 @@ PATTERN
 }
 
 resource "aws_cloudwatch_event_target" "sns" {
-  rule      = "${aws_cloudwatch_event_rule.container_stopped.name}"
+  rule = "${aws_cloudwatch_event_rule.container_stopped.name}"
   target_id = "SendToSNS"
-  arn       = "${aws_sns_topic.main.arn}"
+  arn = "${aws_sns_topic.main.arn}"
 }
 
 # sns
-resource "aws_sns_topic" "main" {
-  name = "task-stopped-alert"
+data "aws_iam_policy_document" "sns-topic-policy" {
+  statement {
+    actions = [
+      "SNS:Subscribe",
+      "SNS:SetTopicAttributes",
+      "SNS:RemovePermission",
+      "SNS:Receive",
+      "SNS:Publish",
+      "SNS:ListSubscriptionsByTopic",
+      "SNS:GetTopicAttributes",
+      "SNS:DeleteTopic",
+      "SNS:AddPermission",
+    ]
 
-  policy = <<EOF
-{
-  "Version": "2008-10-17",
+    condition {
+      test = "StringEquals"
+      variable = "AWS:SourceOwner"
 
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Id": "publish_policy",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": [
-        "SNS:Publish",
-        "SNS:RemovePermission",
-        "SNS:SetTopicAttributes",
-        "SNS:DeleteTopic",
-        "SNS:ListSubscriptionsByTopic",
-        "SNS:GetTopicAttributes",
-        "SNS:Receive",
-        "SNS:AddPermission",
-        "SNS:Subscribe"
-      ],
-      "Resource": "arn:aws:sns:${data.aws_region.current.name}:${var.sns_source_owner}:new-topic",
-      "Condition": {
-        "StringEquals": {
-          "AWS:SourceOwner": "${var.sns_source_owner}"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": [
-        "SNS:Subscribe",
-        "SNS:Receive"
-      ],
-      "Resource": "arn:aws:sns:${data.aws_region.current.name}:${var.sns_source_owner}:new-topic",
-      "Condition": {
-        "StringLike": {
-          "SNS:Endpoint": "${var.sns_subscriber}"
-        }
-      }
+      values = [
+        "${var.sns_source_owner}",
+      ]
     }
-  ]
+
+    effect = "Allow"
+
+    principals {
+      type = "AWS"
+      identifiers = ["*"]
+    }
+
+    resources = [
+      "arn:aws:sns:${data.aws_region.current.name}:${var.sns_source_owner}:${var.sns_topic_name}",
+    ]
+  }
+
+  statement {
+    actions = [
+      "SNS:Subscribe",
+      "SNS:Receive",
+    ]
+
+    condition {
+      test = "StringLike"
+      variable = "SNS:Endpoint"
+
+      values = [
+        "${var.sns_subscriber}",
+      ]
+    }
+
+    effect = "Allow"
+
+    principals {
+      type = "AWS"
+      identifiers = ["*"]
+    }
+
+    resources = [
+      "arn:aws:sns:${data.aws_region.current.name}:${var.sns_source_owner}:${var.sns_topic_name}",
+    ]
+
+    sid = "__${var.sns_topic_name}_policy_ID"
+  }
 }
-EOF
+
+resource "aws_sns_topic" "main" {
+  name = "${var.sns_topic_name}"
+  policy = "${data.aws_iam_policy_document.sns-topic-policy.json}"
+}
+
+resource "aws_sns_topic_subscription" "sns-topic" {
+  topic_arn = "${aws_sns_topic.main.arn}"
+  protocol = "http"
+  endpoint = "${var.sns_subscriber}"
 }
 
 variable "sns_source_owner" {
@@ -83,4 +115,8 @@ variable "sns_source_owner" {
 
 variable "sns_subscriber" {
   description = "The endpoint that will have access to subscribe to the SNS topic."
+}
+
+variable "sns_topic_name" {
+  description = "The name of your sns topic."
 }
