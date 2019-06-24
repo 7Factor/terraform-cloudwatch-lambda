@@ -79,7 +79,7 @@ data "aws_iam_policy_document" "sns-topic-policy" {
       variable = "SNS:Endpoint"
 
       values = [
-        "${var.sns_subscriber}",
+        "${var.webhook_url}",
       ]
     }
 
@@ -142,14 +142,17 @@ resource "aws_lambda_function" "sns_handler" {
   source_code_hash = "${filebase64sha256("lambda.zip")}"
 
   runtime = "python3.7"
+
+  environment {
+    variables = {
+      slack_channel = "${var.slack_channel}"
+      hook_url      = "${var.webhook_url}"
+    }
+  }
 }
 
 variable "sns_source_owner" {
   description = "The id of the AWS account that will own the SNS topic and have publish access."
-}
-
-variable "sns_subscriber" {
-  description = "The endpoint that will have access to subscribe to the SNS topic."
 }
 
 variable "sns_topic_name" {
@@ -162,4 +165,12 @@ variable "lambda_function_name" {
 
 variable "lambda_handler" {
   description = "The name of your lambda handler. Format is <FILE>.<HANDLER>"
+}
+
+variable "slack_channel" {
+  description = "The channel you want messages to be posted to."
+}
+
+variable "webhook_url" {
+  description = "The webhook_url from your Slack app."
 }
