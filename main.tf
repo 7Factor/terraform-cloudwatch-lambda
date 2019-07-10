@@ -22,9 +22,9 @@ PATTERN
 }
 
 resource "aws_cloudwatch_event_target" "sns" {
-  rule = "${aws_cloudwatch_event_rule.container_stopped.name}"
+  rule = aws_cloudwatch_event_rule.container_stopped.name
   target_id = "SendToSNS"
-  arn = "${aws_sns_topic.main.arn}"
+  arn = aws_sns_topic.main.arn
 }
 
 # sns
@@ -47,7 +47,7 @@ data "aws_iam_policy_document" "sns-topic-policy" {
       variable = "AWS:SourceOwner"
 
       values = [
-        "${var.sns_source_owner}",
+        var.sns_source_owner,
       ]
     }
 
@@ -74,7 +74,7 @@ data "aws_iam_policy_document" "sns-topic-policy" {
       variable = "SNS:Endpoint"
 
       values = [
-        "${var.webhook_url}",
+        var.webhook_url,
       ]
     }
 
@@ -94,14 +94,14 @@ data "aws_iam_policy_document" "sns-topic-policy" {
 }
 
 resource "aws_sns_topic" "main" {
-  name = "${var.sns_topic_name}"
-  policy = "${data.aws_iam_policy_document.sns-topic-policy.json}"
+  name = var.sns_topic_name
+  policy = data.aws_iam_policy_document.sns-topic-policy.json
 }
 
 resource "aws_sns_topic_subscription" "sns-topic" {
-  topic_arn = "${aws_sns_topic.main.arn}"
+  topic_arn = aws_sns_topic.main.arn
   protocol = "lambda"
-  endpoint = "${aws_lambda_function.sns_handler.arn}"
+  endpoint = aws_lambda_function.sns_handler.arn
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
@@ -127,21 +127,21 @@ EOF
 
 resource "aws_lambda_function" "sns_handler" {
   filename      = "lambda.zip"
-  function_name = "${var.lambda_function_name}"
-  role          = "${aws_iam_role.iam_for_lambda.arn}"
-  handler       = "${var.lambda_handler}"
+  function_name = var.lambda_function_name
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = var.lambda_handler
 
   # The filebase64sha256() function is available in Terraform 0.11.12 and later
   # For Terraform 0.11.11 and earlier, use the base64sha256() function and the file() function:
   # source_code_hash = "${base64sha256(file("lambda_function_payload.zip"))}"
-  source_code_hash = "${filebase64sha256("lambda.zip")}"
+  source_code_hash = filebase64sha256("lambda.zip")
 
   runtime = "python3.7"
 
   environment {
     variables = {
-      slack_channel = "${var.slack_channel}"
-      hook_url      = "${var.webhook_url}"
+      slack_channel = var.slack_channel
+      hook_url      = var.webhook_url
     }
   }
 }
