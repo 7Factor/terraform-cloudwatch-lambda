@@ -1,10 +1,5 @@
 terraform {
-  required_version = ">=0.10.7"
-}
-
-provider "aws" {
-  version = "~> 2.0"
-  region  = "us-east-1"
+  required_version = ">=0.12.3"
 }
 
 data "aws_region" "current" {}
