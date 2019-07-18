@@ -53,6 +53,24 @@ resource "aws_iam_role" "iam_for_lambda" {
 EOF
 }
 
+data "aws_iam_policy" "lambda_execution_role" {
+  arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+data "aws_iam_policy" "xray_write_access" {
+  arn = "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_execution_role_attachment" {
+  policy_arn = data.aws_iam_policy.lambda_execution_role.arn
+  role       = aws_iam_role.iam_for_lambda.name
+}
+
+resource "aws_iam_role_policy_attachment" "xray_write_access_attachment" {
+  policy_arn = data.aws_iam_policy.xray_write_access.arn
+  role       = aws_iam_role.iam_for_lambda.name
+}
+
 resource "aws_lambda_function" "handler" {
   filename      = "lambda.zip"
   function_name = var.lambda_function_name
@@ -68,7 +86,7 @@ resource "aws_lambda_function" "handler" {
 
   environment {
     variables = {
-      hook_url      = var.webhook_url
+      hook_url = var.webhook_url
     }
   }
 }
