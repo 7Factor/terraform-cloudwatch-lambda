@@ -19,7 +19,7 @@ variable cloudwatch_rule_event_pattern {
 }
 
 variable tracing_config_mode {
-  default = "PassThrough"
+  default     = "PassThrough"
   description = "The mode for xray tracing. Can either be PassThrough or Active. Defaults to Passthrough"
 }
 
