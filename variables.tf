@@ -6,7 +6,7 @@ variable lambda_s3_bucket {
   description = "The name of the S3 bucket that holds your lambda artifact."
 }
 variable lambda_s3_key {
-  default = "The S3 key of your lambda artifact."
+  description = "The S3 key of your lambda artifact."
 }
 
 variable lambda_function_name {
