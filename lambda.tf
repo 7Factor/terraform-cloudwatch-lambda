@@ -25,7 +25,7 @@ resource "aws_lambda_function" "handler" {
   runtime = var.lambda_runtime
 
   tracing_config {
-    mode = var.tracing_config_mode
+    mode = var.lambda_tracing_config_mode
   }
 
   environment {

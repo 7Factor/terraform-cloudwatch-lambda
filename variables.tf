@@ -1,3 +1,7 @@
+variable cloudwatch_rule_event_pattern {
+  description = "Heredoc style json blob that descibes a cloudwatch rule event pattern. Visit the AWS docs for more info."
+}
+
 variable lambda_s3_bucket {
   description = "The name of the S3 bucket that holds your lambda artifact."
 }
@@ -32,11 +36,7 @@ variable lambda_environment_vars {
   description = "A map of key/value pairs to pass to your lambda function."
 }
 
-variable cloudwatch_rule_event_pattern {
-  description = "Heredoc style json blob that descibes a cloudwatch rule event pattern. Visit the AWS docs for more info."
-}
-
-variable tracing_config_mode {
+variable lambda_tracing_config_mode {
   default     = "PassThrough"
   description = "The mode for xray tracing. Can either be PassThrough or Active. Defaults to Passthrough"
 }
