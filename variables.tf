@@ -9,11 +9,6 @@ variable lambda_s3_key {
   description = "The S3 key of your lambda artifact."
 }
 
-variable lambda_s3_object_version {
-  default     = "latest"
-  description = "The version of your lambda artifact. Defaults to latest."
-}
-
 variable lambda_function_name {
   description = "The name of your lambda function"
 }
