@@ -7,8 +7,9 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_foo" {
 }
 
 resource "aws_lambda_function" "handler" {
-  s3_bucket = var.lambda_s3_bucket
-  s3_key    = var.lambda_s3_key
+  s3_bucket         = var.lambda_s3_bucket
+  s3_key            = var.lambda_s3_key
+  s3_object_version = var.lambda_s3_object_version
 
   function_name = var.lambda_function_name
   role          = aws_iam_role.iam_for_lambda.arn
